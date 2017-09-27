@@ -81,8 +81,8 @@ then
     curl http://www.ffmpeg.org/releases/$SOURCE.tar.bz2 | tar xj \
       || exit 1
     # Traverse the ffmpeg source directory and replace: AVMediaType with AVMediaTypeFFMPEG
-    LC_ALL=C find ffmpeg-3.3 -type f -name '*.c' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
-    LC_ALL=C find ffmpeg-3.3 -type f -name '*.h' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    LC_ALL=C find $SOURCE -type f -name '*.c' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    LC_ALL=C find $SOURCE -type f -name '*.h' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
   fi
 
   CWD=`pwd`
