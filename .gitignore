@@ -2,4 +2,5 @@ scratch*
 thin*
 fat*
 FFmpeg-*
+speex/
 .DS_Store

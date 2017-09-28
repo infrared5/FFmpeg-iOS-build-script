@@ -13,8 +13,40 @@ THIN=`pwd`/"thin"
 
 #FDK_AAC=`pwd`/../fdk-aac-build-script-for-iOS/fdk-aac-ios
 
-CONFIGURE_FLAGS="--enable-cross-compile --disable-debug --disable-programs \
-                 --disable-doc --enable-pic"
+SPEEX=`pwd`/"speex/build/speex"
+
+CONFIGURE_FLAGS="--disable-doc \
+--enable-libspeex \
+--enable-cross-compile \
+--disable-ffmpeg \
+--disable-ffplay \
+--disable-ffprobe \
+--disable-ffserver \
+--disable-avdevice \
+--disable-programs \
+--disable-encoders \
+--disable-filters \
+--disable-muxers \
+--disable-demuxers \
+--disable-indevs \
+--disable-outdevs \
+--disable-swscale-alpha \
+--disable-doc \
+--disable-asm \
+--disable-yasm \
+--disable-symver \
+--disable-decoders \
+--disable-everything \
+--enable-decoder=aac \
+--enable-decoder=h264 \
+--enable-decoder=libspeex \
+--enable-decoder=libstagefright_h264 \
+--disable-protocols \
+--disable-bsfs \
+--disable-parsers \
+--enable-parser='h264,aac' \
+--enable-small \
+--disable-debug"
 
 if [ "$X264" ]
 then
@@ -29,7 +61,9 @@ fi
 # avresample
 #CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-avresample"
 
-ARCHS="arm64 armv7 x86_64 i386"
+#ARCHS="arm64 armv7 x86_64 i386"
+# only need arm7 and arm64 - no simulators.
+ARCHS="arm64 armv7 armv7s"
 
 COMPILE="y"
 LIPO="y"
@@ -128,6 +162,11 @@ then
     then
       CFLAGS="$CFLAGS -I$FDK_AAC/include"
       LDFLAGS="$LDFLAGS -L$FDK_AAC/lib"
+    fi
+    if [ "$SPEEX" ]
+    then
+      CFLAGS="$CFLAGS -I$SPEEX/$ARCH/include"
+      LDFLAGS="$LDFLAGS -L$SPEEX/$ARCH/lib"
     fi
 
     TMPDIR=${TMPDIR/%\/} $CWD/$SOURCE/configure \
