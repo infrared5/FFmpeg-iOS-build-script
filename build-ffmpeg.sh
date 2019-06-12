@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # directories
-SOURCE="ffmpeg-3.3"
-FAT="FFmpeg-iOS"
+SOURCE="ffmpeg-4.1"
+FAT="FFmpeg-iOS-4"
 
 SCRATCH="scratch"
 # must be an absolute path
@@ -11,23 +11,28 @@ THIN=`pwd`/"thin"
 # absolute path to x264 library
 #X264=`pwd`/fat-x264
 
-#FDK_AAC=`pwd`/../fdk-aac-build-script-for-iOS/fdk-aac-ios
-
-SPEEX=`pwd`/"speex/build/speex"
+#FDK_AAC=`pwd`/fdk-aac/fdk-aac-ios
 
 CONFIGURE_FLAGS="--disable-doc \
 --enable-libspeex \
 --enable-cross-compile \
+--extra-cflags=-fembed-bitcode \
+--extra-cxxflags=-fembed-bitcode \
+--disable-debug \
 --disable-ffmpeg \
 --disable-ffplay \
 --disable-ffprobe \
---disable-ffserver \
 --disable-avdevice \
---disable-programs \
+--disable-avfilter \
 --disable-encoders \
+--disable-programs \
+--disable-parsers \
+--disable-decoders \
+--disable-protocols \
 --disable-filters \
 --disable-muxers \
 --disable-demuxers \
+--disable-bsfs \
 --disable-indevs \
 --disable-outdevs \
 --disable-swscale-alpha \
@@ -35,18 +40,12 @@ CONFIGURE_FLAGS="--disable-doc \
 --disable-asm \
 --disable-yasm \
 --disable-symver \
---disable-decoders \
---disable-everything \
 --enable-decoder=aac \
 --enable-decoder=h264 \
 --enable-decoder=libspeex \
---enable-decoder=libstagefright_h264 \
---disable-protocols \
---disable-bsfs \
---disable-parsers \
---enable-parser='h264,aac' \
---enable-small \
---disable-debug"
+--enable-parser=h264 \
+--enable-parser=aac \
+--enable-videotoolbox"
 
 if [ "$X264" ]
 then
@@ -61,14 +60,13 @@ fi
 # avresample
 #CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-avresample"
 
-#ARCHS="arm64 armv7 x86_64 i386"
-# only need arm7 and arm64 - no simulators.
-ARCHS="arm64 armv7 armv7s"
+#ARCHS="arm64 armv7s armv7 x86_64"
+ARCHS="arm64 armv7s armv7"
 
 COMPILE="y"
 LIPO="y"
 
-DEPLOYMENT_TARGET="6.0"
+DEPLOYMENT_TARGET="8.0"
 
 if [ "$*" ]
 then
@@ -94,7 +92,7 @@ then
     if [ ! `which brew` ]
     then
       echo 'Homebrew not found. Trying to install...'
-                        ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" \
+      ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)" \
         || exit 1
     fi
     echo 'Trying to install Yasm...'
@@ -114,26 +112,35 @@ then
     echo 'FFmpeg source not found. Trying to download...'
     curl http://www.ffmpeg.org/releases/$SOURCE.tar.bz2 | tar xj \
       || exit 1
-    # Traverse the ffmpeg source directory and replace: AVMediaType with AVMediaTypeFFMPEG
-    LC_ALL=C find $SOURCE -type f -name '*.c' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
-    LC_ALL=C find $SOURCE -type f -name '*.h' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    # removed '' for macOS building.
+    LC_ALL=C find $SOURCE -type f -name '*.c' -exec sed -i s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    LC_ALL=C find $SOURCE -type f -name '*.h' -exec sed -i s/AVMediaType/AVMediaTypeFFMPEG/g {} +
   fi
 
+  SPEEX=`pwd`/speex/build/speex
   CWD=`pwd`
+
+  # let pkgconfig use our recently built speex as the dependency.
+  export PKG_CONFIG_PATH="${SPEEX}/arm64/lib/pkgconfig"
+
   for ARCH in $ARCHS
   do
+
+    SPEEXA=$SPEEX/$ARCH
     echo "building $ARCH..."
+    echo "speex is at $SPEEXA"
     mkdir -p "$SCRATCH/$ARCH"
     cd "$SCRATCH/$ARCH"
 
     CFLAGS="-arch $ARCH"
+
     if [ "$ARCH" = "i386" -o "$ARCH" = "x86_64" ]
     then
         PLATFORM="iPhoneSimulator"
         CFLAGS="$CFLAGS -mios-simulator-version-min=$DEPLOYMENT_TARGET"
     else
         PLATFORM="iPhoneOS"
-        CFLAGS="$CFLAGS -mios-version-min=$DEPLOYMENT_TARGET -fembed-bitcode"
+        CFLAGS="$CFLAGS -mios-version-min=$DEPLOYMENT_TARGET"
         if [ "$ARCH" = "arm64" ]
         then
             EXPORT="GASPP_FIX_XCODE5=1"
@@ -142,17 +149,12 @@ then
 
     XCRUN_SDK=`echo $PLATFORM | tr '[:upper:]' '[:lower:]'`
     CC="xcrun -sdk $XCRUN_SDK clang"
-
-    # force "configure" to use "gas-preprocessor.pl" (FFmpeg 3.3)
-    if [ "$ARCH" = "arm64" ]
-    then
-        AS="gas-preprocessor.pl -arch aarch64 -- $CC"
-    else
-        AS="$CC"
-    fi
-
     CXXFLAGS="$CFLAGS"
     LDFLAGS="$CFLAGS"
+
+    CFLAGS="$CFLAGS -I$SPEEXA/include"
+    LDFLAGS="$LDFLAGS -L$SPEEXA/lib"
+
     if [ "$X264" ]
     then
       CFLAGS="$CFLAGS -I$X264/include"
@@ -163,22 +165,22 @@ then
       CFLAGS="$CFLAGS -I$FDK_AAC/include"
       LDFLAGS="$LDFLAGS -L$FDK_AAC/lib"
     fi
-    if [ "$SPEEX" ]
-    then
-      CFLAGS="$CFLAGS -I$SPEEX/$ARCH/include"
-      LDFLAGS="$LDFLAGS -L$SPEEX/$ARCH/lib"
-    fi
+  
+    echo "${CWD}/${SOURCE}"
 
     TMPDIR=${TMPDIR/%\/} $CWD/$SOURCE/configure \
         --target-os=darwin \
         --arch=$ARCH \
         --cc="$CC" \
-        --as="$AS" \
         $CONFIGURE_FLAGS \
         --extra-cflags="$CFLAGS" \
+        --extra-cxxflags="$CXXFLAGS" \
         --extra-ldflags="$LDFLAGS" \
         --prefix="$THIN/$ARCH" \
     || exit 1
+
+    echo "LETS MAKE"
+    pwd
 
     make -j3 install $EXPORT || exit 1
     cd $CWD
