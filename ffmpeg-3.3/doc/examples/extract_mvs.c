@@ -69,7 +69,7 @@ static int decode_packet(int *got_frame, int cached)
     return decoded;
 }
 
-static int open_codec_context(AVFormatContext *fmt_ctx, enum AVMediaType type)
+static int open_codec_context(AVFormatContext *fmt_ctx, enum AVMediaTypeFFMPEG type)
 {
     int ret;
     AVStream *st;

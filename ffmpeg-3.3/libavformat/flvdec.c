@@ -1042,7 +1042,7 @@ skip:
             }
         }
         if (i == s->nb_streams) {
-            static const enum AVMediaType stream_types[] = {AVMEDIA_TYPE_VIDEO, AVMEDIA_TYPE_AUDIO, AVMEDIA_TYPE_SUBTITLE};
+            static const enum AVMediaTypeFFMPEG stream_types[] = {AVMEDIA_TYPE_VIDEO, AVMEDIA_TYPE_AUDIO, AVMEDIA_TYPE_SUBTITLE};
             st = create_stream(s, stream_types[stream_type]);
             if (!st)
                 return AVERROR(ENOMEM);

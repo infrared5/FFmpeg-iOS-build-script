@@ -186,7 +186,7 @@ type av_buffersink_get_##field(const AVFilterContext *ctx) { \
     return ctx->inputs[0]->field; \
 }
 
-MAKE_AVFILTERLINK_ACCESSOR(enum AVMediaType , type               )
+MAKE_AVFILTERLINK_ACCESSOR(enum AVMediaTypeFFMPEG , type               )
 MAKE_AVFILTERLINK_ACCESSOR(AVRational       , time_base          )
 MAKE_AVFILTERLINK_ACCESSOR(int              , format             )
 

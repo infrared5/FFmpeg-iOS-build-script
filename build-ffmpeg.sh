@@ -84,9 +84,10 @@ then
 
   if [ -r $SOURCE ]
   then
+    echo "DODOODODOOD"
     # Traverse the ffmpeg source directory and replace: AVMediaType with AVMediaTypeFFMPEG
-    LC_ALL=C find $SOURCE -type f -name '*.c' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
-    LC_ALL=C find $SOURCE -type f -name '*.h' -exec sed -i '' s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    LC_ALL=C find $SOURCE -type f -name '*.c' -exec sed -i s/AVMediaType/AVMediaTypeFFMPEG/g {} +
+    LC_ALL=C find $SOURCE -type f -name '*.h' -exec sed -i s/AVMediaType/AVMediaTypeFFMPEG/g {} +
   fi
 
   CWD=`pwd`
